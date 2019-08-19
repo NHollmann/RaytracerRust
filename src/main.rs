@@ -22,7 +22,8 @@ fn trace(ray : Ray, depth : u32, scene : &Scene) -> Vector3d {
         }
 
         if hit_record.material.has_reflection() {
-            let reflected_ray = Ray::new(hit_record.point, hit_record.normal);
+            let reflection = Vector3d::zero() - ray.get_direction().reflect(hit_record.normal).normalized();
+            let reflected_ray = Ray::new(hit_record.point + reflection * 0.001, reflection);
             let reflected_color = trace(reflected_ray, depth - 1, scene);
 
             color += hit_record.material.reflection_color * reflected_color;
@@ -55,43 +56,56 @@ fn main() {
     let width = 500;
     let height = 250;
     let depth = 30;
-    let fov = 90;
+    let fov = 65;
 
     let look_from = Vector3d::new(0.0, 0.0, -5.0);
     let look_at = Vector3d::new(0.0, 0.0, 0.0);
     let up = Vector3d::new(0.0, 1.0, 0.0);
 
     let sphere1 = sphere::Sphere::new(
-        Vector3d::new(0.0, 0.0, 0.0), 
+        Vector3d::new(0.75, 0.0, 0.0), 
         2.0,
         material::Material::new_specular(
             Vector3d::one(), 
-            Vector3d::one(),
+            Vector3d::new(1.0, 1.0, 0.0),
             Vector3d::one(),
             10.0
         )
     );
 
     let sphere2 = sphere::Sphere::new(
-        Vector3d::new(0.5, 1.0, -2.5), 
+        Vector3d::new(1.25, 1.0, -2.5), 
         0.25,
         material::Material::new_specular(
             Vector3d::one(), 
-            Vector3d::one(),
+            Vector3d::new(0.5, 0.2, 1.0),
             Vector3d::one(),
             10.0
         )
     );
 
+    let sphere3 = sphere::Sphere::new(
+        Vector3d::new(-3.5, 0.0, -1.5), 
+        1.5,
+        material::Material::new(
+            Vector3d::zero(), 
+            Vector3d::new(0.2, 0.2, 0.2),
+            Vector3d::one(),
+            20.0,
+            Vector3d::one(),
+            Vector3d::zero()
+        )
+    );
+
     let light = Light {
         position: Vector3d::new(1.0, 2.0, -5.0),
-        ambient_color: Vector3d::new(0.1, 0.0, 0.3),
-        diffuse_color: Vector3d::new(1.0, 1.0, 0.0),
-        specular_color: Vector3d::new(0.0, 0.0, 1.0),
+        ambient_color: Vector3d::new(0.1, 0.1, 0.1),
+        diffuse_color: Vector3d::new(1.0, 1.0, 1.0),
+        specular_color: Vector3d::new(0.1, 0.1, 0.1),
     };
 
     let scene = Scene {
-        objects: vec![sphere1, sphere2],
+        objects: vec![sphere1, sphere2, sphere3],
         lights: vec![light],
         camera_pos: look_from
     };
@@ -105,7 +119,7 @@ fn main() {
     for (x, y, pixel) in img.enumerate_pixels_mut() {
         let u = x as f64 / width as f64;
         let v = y as f64 / height as f64;
-        let ray = camera.get_ray(u, v);
+        let ray = camera.get_ray(1.0 - u, 1.0 - v);
 
         let color = trace(ray, depth, &scene);
         let r = to_color(color.x);
