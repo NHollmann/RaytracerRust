@@ -1,4 +1,4 @@
-use crate::math::vector3d::Vector3d;
+use crate::math::vector::Vector3d;
 
 #[derive(Debug)]
 pub struct Ray {
@@ -9,5 +9,13 @@ pub struct Ray {
 impl Ray {
     pub fn new(origin : Vector3d, direction : Vector3d) -> Ray {
         Ray {origin, direction}
+    }
+
+    pub fn get_origin(&self) -> Vector3d {
+        self.origin
+    }
+
+    pub fn get_direction(&self) -> Vector3d {
+        self.direction
     }
 }
