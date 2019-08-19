@@ -13,6 +13,8 @@ use std::fs::File;
 use std::path::Path;
 use std::process;
 use clap::{Arg, App};
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
 
 fn to_color(input : f64) -> u8 {
     if input >= 1.0 {
@@ -63,7 +65,14 @@ fn main() {
     let camera = camera::Camera::new(scene.look_from, scene.look_at, scene.up, scene.fov as f64, aspect);
 
     let mut img = image::ImageBuffer::new(width, height);
+    let step = (width * height) / 100;
 
+    let pbsty = ProgressStyle::default_bar()
+        .template("[{elapsed_precise}] {wide_bar:.cyan/blue} {percent:>4}% {msg}");
+
+    let pb = ProgressBar::new(101);
+    pb.set_style(pbsty);
+    
     for (x, y, pixel) in img.enumerate_pixels_mut() {
         let u = x as f64 / width as f64;
         let v = y as f64 / height as f64;
@@ -74,10 +83,17 @@ fn main() {
         let b = to_color(color.z);
         
         *pixel = image::Rgb([r, g, b]);
+
+        if (y * width + x) % step == 0 {
+            pb.inc(1);
+        }
     }
 
     img.save(&output_filename).unwrap_or_else(|err| {
         eprintln!("Saving error: {}", err);
         process::exit(1);
     });
+
+    pb.inc(1);
+    pb.finish_with_message("Done");
 }
