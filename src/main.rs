@@ -1,4 +1,5 @@
 extern crate image;
+extern crate clap;
 
 mod vector;
 mod ray;
@@ -8,9 +9,10 @@ mod scene;
 mod material;
 
 use scene::Scene;
-use std::env;
 use std::fs::File;
 use std::path::Path;
+use std::process;
+use clap::{Arg, App};
 
 fn to_color(input : f64) -> u8 {
     if input >= 1.0 {
@@ -23,15 +25,36 @@ fn to_color(input : f64) -> u8 {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let matches = App::new("Raytracer Rust")
+        .version("0.1.0")
+        .author("Nicolas Hollmann")
+        .about("A simple raytracer in Rust.")
+        .arg(Arg::with_name("scene")
+                 .required(true)
+                 .takes_value(true)
+                 .index(1)
+                 .help("scene JSON file"))
+        .arg(Arg::with_name("output")
+                 .required(true)
+                 .takes_value(true)
+                 .index(2)
+                 .default_value("rendered.png")
+                 .help("filename for saving output"))
+        .get_matches();
 
-    if env::args().count() < 3 {
-        panic!("Too few arguments!");
-    }
+    let scene_filename = matches.value_of("scene").unwrap();
+    let output_filename = matches.value_of("output").unwrap();
 
-    let json_file_path = Path::new(&args[1]);
-    let json_file = File::open(json_file_path).expect("Error: file not found!");
-    let scene : Scene = serde_json::from_reader(json_file).expect("Error on parsing file!");
+    let json_file_path = Path::new(&scene_filename);
+    let json_file = File::open(json_file_path).unwrap_or_else(|err| {
+        eprintln!("File error: {}", err);
+        process::exit(1);
+    });
+
+    let scene : Scene = serde_json::from_reader(json_file).unwrap_or_else(|err| {
+        eprintln!("Parsing error: {}", err);
+        process::exit(1);
+    });
 
     let width = scene.width;
     let height = scene.height;
@@ -53,5 +76,8 @@ fn main() {
         *pixel = image::Rgb([r, g, b]);
     }
 
-    img.save(&args[2]).unwrap();
+    img.save(&output_filename).unwrap_or_else(|err| {
+        eprintln!("Saving error: {}", err);
+        process::exit(1);
+    });
 }
