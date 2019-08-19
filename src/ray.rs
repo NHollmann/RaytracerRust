@@ -1,4 +1,4 @@
-use crate::math::vector::Vector3d;
+use crate::vector::Vector3d;
 
 #[derive(Debug)]
 pub struct Ray {

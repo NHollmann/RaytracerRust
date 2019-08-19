@@ -1,5 +1,7 @@
-use crate::math::ray::Ray;
-use crate::math::vector::Vector3d;
+use crate::ray::Ray;
+use crate::vector::Vector3d;
+use crate::scene::Scene;
+use crate ::scene::HitRecord;
 
 pub struct Camera {
     origin: Vector3d,
@@ -34,4 +36,41 @@ impl Camera {
 
         Ray::new(self.origin, direction)
     }
+
+    pub fn get_pixel(&self, scene : &Scene, u : f64, v : f64) -> Vector3d {
+        let ray = self.get_ray(u, v);
+
+        trace(ray, scene.depth, &scene)
+    }
+}
+
+fn trace(ray : Ray, depth : u32, scene: &Scene) -> Vector3d {
+    let mut hit_record = HitRecord::default();
+
+    if depth > 0 && scene.hit(&ray, 0.001, std::f64::MAX, &mut hit_record) {
+        let mut color = Vector3d::zero();
+
+        if hit_record.material.has_brdf() {
+            color += hit_record.material.calc_brdf(&hit_record, scene, ray.get_origin());
+        }
+
+        if hit_record.material.has_reflection() {
+            let reflection = Vector3d::zero() - ray.get_direction().reflect(hit_record.normal).normalized();
+            let reflected_ray = Ray::new(hit_record.point + reflection * 0.001, reflection);
+            let reflected_color = trace(reflected_ray, depth - 1, scene);
+
+            color += hit_record.material.reflection_color * reflected_color;
+        }
+
+        if hit_record.material.has_transmission() {
+            let transmission_ray = Ray::new(hit_record.point, hit_record.normal);
+            let transmission_color = trace(transmission_ray, depth - 1, scene);
+
+            color += hit_record.material.transmission_color * transmission_color;
+        }
+
+        return color;
+    }
+
+    Vector3d::zero()
 }

@@ -1,5 +1,5 @@
-use crate::math::vector::Vector3d;
-use crate::math::ray::Ray;
+use crate::vector::Vector3d;
+use crate::ray::Ray;
 use crate::scene::Scene;
 use crate::scene::HitRecord;
 use serde::{Serialize, Deserialize};
