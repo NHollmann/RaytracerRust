@@ -18,4 +18,8 @@ impl Ray {
     pub fn get_direction(&self) -> Vector3d {
         self.direction
     }
+
+    pub fn point_at(&self, t : f64) -> Vector3d {
+        self.origin + self.direction * t
+    }
 }
