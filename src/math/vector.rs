@@ -1,6 +1,6 @@
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Vector3d {
     pub x : f64,
     pub y : f64,

@@ -2,6 +2,7 @@ use crate::math::vector::Vector3d;
 use crate::math::ray::Ray;
 use crate::material::Material;
 use crate::sphere::Sphere;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Copy)]
 pub struct HitRecord {
@@ -22,6 +23,7 @@ impl HitRecord {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Light {
     pub position: Vector3d,
     pub ambient_color: Vector3d,
@@ -29,10 +31,19 @@ pub struct Light {
     pub specular_color: Vector3d,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Scene {
     pub objects: Vec<Sphere>,
     pub lights: Vec<Light>,
-    pub camera_pos : Vector3d,
+
+    pub width: u32,
+    pub height: u32,
+    pub depth: u32,
+    pub fov: u8,
+
+    pub look_from: Vector3d,
+    pub look_at: Vector3d,
+    pub up: Vector3d,
 }
 
 impl Scene {

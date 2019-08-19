@@ -2,7 +2,9 @@ use crate::math::vector::Vector3d;
 use crate::math::ray::Ray;
 use crate::scene::HitRecord;
 use crate::material::Material;
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Sphere {
     center : Vector3d,
     radius : f64,
@@ -10,13 +12,6 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center : Vector3d, radius : f64, material : Material) -> Sphere {
-        Sphere {
-            center,
-            radius,
-            material,
-        }
-    }
 
     pub fn hit(&self, ray : &Ray, t_min : f64, t_max : f64, record : &mut HitRecord) -> bool {
 

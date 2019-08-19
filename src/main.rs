@@ -9,7 +9,9 @@ mod material;
 use math::vector::Vector3d;
 use math::ray::Ray;
 use scene::Scene;
-use scene::Light;
+use std::env;
+use std::fs::File;
+use std::path::Path;
 
 fn trace(ray : Ray, depth : u32, scene : &Scene) -> Vector3d {
     let mut hit_record = scene::HitRecord::default();
@@ -18,7 +20,7 @@ fn trace(ray : Ray, depth : u32, scene : &Scene) -> Vector3d {
         let mut color = Vector3d::zero();
 
         if hit_record.material.has_brdf() {
-            color += hit_record.material.calc_brdf(&hit_record, scene);
+            color += hit_record.material.calc_brdf(&hit_record, scene, ray.get_origin());
         }
 
         if hit_record.material.has_reflection() {
@@ -53,66 +55,23 @@ fn to_color(input : f64) -> u8 {
 }
 
 fn main() {
-    let width = 500;
-    let height = 250;
-    let depth = 30;
-    let fov = 65;
+    let args: Vec<String> = env::args().collect();
 
-    let look_from = Vector3d::new(0.0, 0.0, -5.0);
-    let look_at = Vector3d::new(0.0, 0.0, 0.0);
-    let up = Vector3d::new(0.0, 1.0, 0.0);
+    if env::args().count() < 3 {
+        panic!("Too few arguments!");
+    }
 
-    let sphere1 = sphere::Sphere::new(
-        Vector3d::new(0.75, 0.0, 0.0), 
-        2.0,
-        material::Material::new_specular(
-            Vector3d::one(), 
-            Vector3d::new(1.0, 1.0, 0.0),
-            Vector3d::one(),
-            10.0
-        )
-    );
+    let json_file_path = Path::new(&args[1]);
+    let json_file = File::open(json_file_path).expect("Error: file not found!");
+    let scene : Scene = serde_json::from_reader(json_file).expect("Error on parsing file!");
 
-    let sphere2 = sphere::Sphere::new(
-        Vector3d::new(1.25, 1.0, -2.5), 
-        0.25,
-        material::Material::new_specular(
-            Vector3d::one(), 
-            Vector3d::new(0.5, 0.2, 1.0),
-            Vector3d::one(),
-            10.0
-        )
-    );
-
-    let sphere3 = sphere::Sphere::new(
-        Vector3d::new(-3.5, 0.0, -1.5), 
-        1.5,
-        material::Material::new(
-            Vector3d::zero(), 
-            Vector3d::new(0.2, 0.2, 0.2),
-            Vector3d::one(),
-            20.0,
-            Vector3d::one(),
-            Vector3d::zero()
-        )
-    );
-
-    let light = Light {
-        position: Vector3d::new(1.0, 2.0, -5.0),
-        ambient_color: Vector3d::new(0.1, 0.1, 0.1),
-        diffuse_color: Vector3d::new(1.0, 1.0, 1.0),
-        specular_color: Vector3d::new(0.1, 0.1, 0.1),
-    };
-
-    let scene = Scene {
-        objects: vec![sphere1, sphere2, sphere3],
-        lights: vec![light],
-        camera_pos: look_from
-    };
-    
+    let width = scene.width;
+    let height = scene.height;
+    let depth = scene.depth;
+    let fov = scene.fov;
 
     let aspect = (width as f64) / (height as f64);
-    let camera = camera::Camera::new(look_from, look_at, up, fov as f64, aspect);
+    let camera = camera::Camera::new(scene.look_from, scene.look_at, scene.up, fov as f64, aspect);
 
     let mut img = image::ImageBuffer::new(width, height);
 
@@ -129,5 +88,5 @@ fn main() {
         *pixel = image::Rgb([r, g, b]);
     }
 
-    img.save("rendered.png").unwrap();
+    img.save(&args[2]).unwrap();
 }
